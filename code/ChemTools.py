@@ -160,50 +160,53 @@ def check_mol(mol, property_name, do_charge):
 # ----------------------------------------------------------------------------------------------------------------------
 def do_map(mol, fig_name=None, lab_atom=False, text=False, MapMin=0, MapMax=1):
 
-    # settings
-    from rdkit.Chem.Draw import SimilarityMaps
+    from rdkit.Chem.Draw import SimilarityMaps, rdMolDraw2D
     import matplotlib.pyplot as plt
-    import matplotlib
+    import io
+    from PIL import Image
 
-    scale = -1  # size of dots
-    coordscale = 1  # coordinate scaling
+    # Setup parameters
+    scale = -1  
     colmap = 'bwr'
 
-    mol, charge, err = get_charge(mol, property_name='_GasteigerCharge', do_charge=True)
+
+    mol, charge_prop, err = get_charge(mol, property_name='_GasteigerCharge', do_charge=True)
     if err == 1:
         print('Error in charge calculation')
+        return
 
-    n_at = mol.GetNumAtoms ()  # num atoms
-    charge = np.zeros((n_at, 1))  # init weights
-    # coordinates and property
-    for atom in range (n_at):
-        charge[atom] = mol.GetAtomWithIdx(atom).GetProp('_GasteigerCharge')
+    n_at = mol.GetNumAtoms()
+    # Calcualte charge for each atom using list comprehension
+    charge = [float(mol.GetAtomWithIdx(i).GetProp('_GasteigerCharge')) for i in range(n_at)]
 
-    opts = Chem.Draw.DrawingOptions()
+    drawer = rdMolDraw2D.MolDraw2DCairo(400, 400)
+    opts = drawer.drawOptions()
     opts.clearBackground = True
-    opts.bgColor = (1, 1, 1)
+    opts.backgroundColour = (1, 1, 1)
+    
+    if not lab_atom:
+        opts.addAtomIndices = False
 
-    fig = SimilarityMaps.GetSimilarityMapFromWeights(mol, charge, coordScale=coordscale, colorMap=colmap,
-                                                      colors='w', alpha=0, scale=scale)
+    # 3. Generate the Map
+    # We pass the drawer object directly to handle the rendering
+    SimilarityMaps.GetSimilarityMapFromWeights(mol, charge, 
+                                              draw2d=drawer,
+                                              colorMap=colmap, 
+                                              scale=scale)
 
-    SimilarityMaps.Draw.MolDrawOptions.clearBackground
-    if lab_atom is False:
-        for elem in fig.axes[0].get_children ():
-            if isinstance(elem, matplotlib.text.Text):
-                elem.set_visible (False)
+    # 4. CRITICAL: Finish drawing and convert to an image format Matplotlib can see
+    drawer.FinishDrawing()
+    img_binary = drawer.GetDrawingText()
+    img = Image.open(io.BytesIO(img_binary))
 
+    # 5. Display using Matplotlib
+    plt.figure(figsize=(5, 5))
+    plt.imshow(img)
     plt.axis("off")
 
-    if text is True:
-        import matplotlib.patheffects as PathEffects
-        for at in range (mol.GetNumAtoms()):
-            x = mol._atomPs[at][0]
-            y = mol._atomPs[at][1]
-            plt.text(x, y, '%.2f' % charge[at],
-                      path_effects=[PathEffects.withStroke (linewidth=1, foreground="blue")])
 
     if fig_name is not None:
-        fig.savefig(fig_name, bbox_inches='tight')
+        img.save(fig_name)
 
     return plt.show()
 
