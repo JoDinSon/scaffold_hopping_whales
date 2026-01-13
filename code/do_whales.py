@@ -84,6 +84,9 @@ def do_lcd(coords, w, thr):
     # applies sign
     res = apply_sign(w, res, thr)
 
+    # convert res matrix into standard numpy array
+    res = np.asarray(res)
+    
     x_all, lab_all = extract_lcm(res)  # MDs and labels
 
     return x_all, lab_all
