@@ -1,5 +1,5 @@
 # Note: Personal Experimentation Fork
-This repository is a fork of grisoniFr/scaffold_hopping_whales (https://github.com/grisoniFr/scaffold_hopping_whales.git) for personal experimentationan and learning.
+This repository is a fork of grisoniFr/scaffold_hopping_whales (https://github.com/grisoniFr/scaffold_hopping_whales.git) for personal experimentation and learning.
 Please refer to the **How to cite** section for further information about the original work by Grisoni *et al*.
 
 # Scaffold hopping by holistic molecular descriptors in drug design
